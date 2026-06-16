@@ -1,0 +1,86 @@
+name: Chroma Rename Gate
+
+# Gate every PR / push to main to ensure:
+#   1. All tests pass with the new chroma_ names.
+#   2. No live (non-shim) Python files still import old globex_ symbols
+#      from the production modules directly.
+#   3. Basic lint passes.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── 1. Tests ────────────────────────────────────────────────────────────────
+  test:
+    name: Pytest – chroma suite
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demos/copilot-features
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pytest
+
+      - name: Run tests
+        run: pytest tests/ -v
+
+  # ── 2. No stale globex_ symbols in production code ──────────────────────────
+  no-stale-globex:
+    name: No stale globex_ symbols in production code
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for globex_ in non-shim Python files
+        # Allow the two shim files (globex_service.py, globex_utils.py) to exist.
+        # Fail if ANY other .py file in demos/copilot-features/ still contains
+        # a live reference to the old globex_ prefix (import, class name, etc.).
+        run: |
+          set +e
+          SHIMS="demos/copilot-features/app/globex_service.py demos/copilot-features/app/globex_utils.py"
+          BAD=$(grep -rn --include="*.py" "globex_" demos/copilot-features/ \
+                  $(printf -- '--exclude=%s ' $SHIMS) \
+                | grep -v "# deprecated" \
+                | grep -v "DeprecationWarning" \
+                | grep -v "globex_service is deprecated" \
+                | grep -v "globex_utils is deprecated")
+          if [ -n "$BAD" ]; then
+            echo "::error::Found stale globex_ references outside shims:"
+            echo "$BAD"
+            exit 1
+          fi
+          echo "No stale globex_ references found."
+
+  # ── 3. Lint ─────────────────────────────────────────────────────────────────
+  lint:
+    name: Flake8 lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demos/copilot-features
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Run flake8
+        run: flake8 app/ cli/ tests/ --max-line-length=100 --extend-ignore=E501
