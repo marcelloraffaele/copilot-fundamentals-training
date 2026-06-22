@@ -35,4 +35,25 @@ We currently triage support tickets using Severity only.
 ### Current rules
 - Triage happens daily
 - High severity should be addressed first
-- We do not currently define priority labels, default ownership, or a fast triage checklist
+- Use Severity to assign the default Priority on first review
+
+### Priority levels
+- **P0** — Active outage, data loss, or security issue needing immediate action
+- **P1** — Major workflow is blocked and should be picked up the same day
+- **P2** — Important issue with a workaround; schedule in normal planning
+- **P3** — Minor issue, polish, or question that can wait
+
+### Default Severity → Priority
+| Severity | Default Priority |
+| --- | --- |
+| High | P1 |
+| Medium | P2 |
+| Low | P3 |
+
+Escalate to **P0** for active outages, data loss, or security emergencies.
+
+### How to triage in 60 seconds
+1. Confirm the reported impact and choose **Low**, **Medium**, or **High** severity.
+2. Apply the default Priority from the table above.
+3. Escalate to **P0** for emergencies, or adjust one level if customer impact, timing, or workaround quality changes urgency.
+4. Add the priority label and route the ticket to the right team or owner.
